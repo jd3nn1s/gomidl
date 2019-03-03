@@ -1,0 +1,30 @@
+//
+// Example.idl
+//
+import "mydefs.h","unknwn.idl";
+
+[
+object,
+uuid(a03d1420-b1ec-11d0-8c3a-00c04fc31d2f),
+] interface IFace1 : IUnknown
+{
+    HRESULT MethodA([in] short Bread, [out] BKFST * pBToast);
+    HRESULT MethodB([in, out] BKFST * pBPoptart);
+};
+
+[
+object,
+uuid(a03d1421-b1ec-11d0-8c3a-00c04fc31d2f),
+pointer_default(unique)
+] interface IFace2 : IUnknown
+{
+};
+
+interface IFace3;
+interface Iface4 {};
+[]interface IFace5;
+
+enum foo {
+    hello = 0x1,
+    goodbye = hello | 0x2
+};
