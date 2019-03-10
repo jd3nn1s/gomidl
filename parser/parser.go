@@ -79,6 +79,9 @@ func (f *mlex) Lex(lval *yySymType) int {
 	if !ok {
 		log.Fatalln("unknown token", t)
 	}
+
+	lval.str = f.s.LastToken().Val
+
 	return parserType
 }
 
