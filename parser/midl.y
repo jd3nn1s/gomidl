@@ -187,6 +187,7 @@ libraryEntry: interface
 coclass: optionalAttributeList COCLASS IDENT '{' interfaceList '}'
 {
 	$$ = &ast.CoClassNode{
+		Name: $3,
 		Attributes: $1,
 		Interfaces: $5,
 	}

@@ -21,6 +21,8 @@ func Generate(nodes []interface{}, writer io.Writer) {
 			gen.genTypedef(v)
 		case *ast.InterfaceNode:
 			gen.genInterface(v)
+		case *ast.LibraryNode:
+			gen.genLibrary(v)
 		default:
 			log.Printf("unsupported %T\n", v)
 		}
