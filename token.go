@@ -19,20 +19,20 @@ const (
 	literal_end
 
 	operators_beg
-	LPAREN // (
-	RPAREN // )
-	LBRACK // [
-	RBRACK // ]
-	LBRACE // {
-	RBRACE // }
+	LPAREN  // (
+	RPAREN  // )
+	LBRACK  // [
+	RBRACK  // ]
+	LBRACE  // {
+	RBRACE  // }
 
-	COMMA     // ,
-	COLON     // :
-	SEMICOLON // ;
-	DASH      // -
-	PTR       // *
-	EQUALS    // =
-	B_OR      // |
+	COMMA      // ,
+	COLON      // :
+	SEMICOLON  // ;
+	DASH       // -
+	PTR        // *
+	EQUALS     // =
+	B_OR       // |
 	operators_end
 
 	keyword_beg
@@ -41,6 +41,7 @@ const (
 	CPP_QUOTE
 	MIDL_PRAGMA
 	ENUM
+	COCLASS
 	TYPEDEF
 	LIBRARY
 	IMPORTLIB
@@ -48,6 +49,7 @@ const (
 	CONST
 	LONG
 	STRUCT
+	HELPSTRING
 	keyword_end
 
 	attr_beg
@@ -62,13 +64,20 @@ const (
 	RETVAL
 	SIZE_IS
 	OLEAUTOMATION
+	LOCAL
+	ATTR_STRING
+	DEFAULT
+
 	V1_ENUM
 	attr_end
 
 	param_attr_beg
 	IN
 	OUT
+	ANNOTATION
 	MAX_IS
+	UNIQUE
+	IID_IS
 	param_attr_end
 )
 
@@ -87,10 +96,10 @@ var tokenEnumMap = map[TokenType]string{
 	VERSION:         "version",
 	INTERFACE:       "interface",
 	ENUM:            "enum",
-	STRUCT:			"struct",
+	STRUCT:          "struct",
 	MIDL_PRAGMA:     "midl_pragma",
 	TYPEDEF:         "typedef",
-	V1_ENUM: "v1_enum",
+	V1_ENUM:         "v1_enum",
 	LIBRARY:         "library",
 	IMPORTLIB:       "importlib",
 	PROPGET:         "propget",
@@ -98,9 +107,17 @@ var tokenEnumMap = map[TokenType]string{
 	OLEAUTOMATION:   "oleautomation",
 	SIZE_IS:         "size_is",
 	RETVAL:          "retval",
+	ANNOTATION:      "annotation",
+	LOCAL:           "local",
+	UNIQUE:          "unique",
 	MODULE:          "module",
 	CONST:           "const",
 	LONG:            "long",
+	ATTR_STRING:     "string",
+	COCLASS:         "coclass",
+	IID_IS:          "iid_is",
+	HELPSTRING:		 "helpstring",
+	DEFAULT:		 "default",
 
 	IN:     "in",
 	OUT:    "out",

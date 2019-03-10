@@ -27,6 +27,7 @@ moduleConstantNode *go_midl.ModuleConstantNode
 structNode *go_midl.StructNode
 structFieldNode *go_midl.StructFieldNode
 structFieldNodeList []*go_midl.StructFieldNode
+coClassNode *go_midl.CoClassNode
 
 int int
 str string
@@ -37,9 +38,9 @@ bool bool
 intf interface{}
 }
 
-%token INTERFACE IDENT IMPORT STRING CPP_QUOTE MIDL_PRAGMA NUM ENUM TYPEDEF LIBRARY IMPORTLIB MODULE STRUCT
+%token INTERFACE IDENT IMPORT STRING CPP_QUOTE MIDL_PRAGMA NUM ENUM TYPEDEF LIBRARY IMPORTLIB MODULE STRUCT COCLASS DEFAULT
 // interface attributes
-%token POINTER_DEFAULT OBJECT UUID OLEAUTOMATION
+%token POINTER_DEFAULT OBJECT UUID OLEAUTOMATION LOCAL HELPSTRING
 // library attributes
 %token LCID VERSION
 // variables
@@ -49,12 +50,13 @@ intf interface{}
 // method attributes
 %token PROPGET PROPPUT
 // parameter attributes
-%token IN OUT MAX_IS RETVAL SIZE_IS
+%token IN OUT MAX_IS RETVAL SIZE_IS ANNOTATION ATTR_STRING UNIQUE IID_IS
 // typedef attributes
 %token V1_ENUM
 
 %type <importNode> importFiles
 %type <interfaceNode> interface
+%type <interfaceNodeList> interfaceList
 
 %type <attributeNode> attribute methodAttr
 %type <attributeNodeList> optionalAttributeList attributeList optionalMethodAttrs methodAttrList
@@ -82,16 +84,22 @@ intf interface{}
 
 %type <moduleConstantNode> moduleEntry
 
+%type <coClassNode> coclass
+
 %type <lstr> stringListLoop
-%type <str> STRING IDENT NUM LONG
+%type <str> STRING IDENT NUM LONG UNIQUE
 %type <bool> array
-%type <str> parentInterface enumVal paramType sizeParams sizeParam
+%type <str> parentInterface enumVal paramType sizeParams sizeParam pointerType
 
 %type <intf> cppQuote
 %type <node> entry libraryEntry
 %type <nodes> complete entryList libraryEntryList
 
 %type <int> optionalPointer
+
+
+%nonassoc ENUM
+%nonassoc IDENT
 
 %%
 
@@ -133,7 +141,7 @@ cppQuote: CPP_QUOTE '(' STRING ')'
 
 //// library
 
-library: optionalAttributeList LIBRARY IDENT '{' libraryEntryList '}'
+library: optionalAttributeList LIBRARY IDENT '{' libraryEntryList '}' optionalSemicolon
 	{
 		$$ = &go_midl.LibraryNode{
 			Name: $3,
@@ -170,7 +178,32 @@ libraryEntry: interface
 		$$ = &go_midl.ModuleNode{
 		}
 	}
+	| coclass
+	{ $$ = $1 }
 
+//// coclass
+
+coclass: optionalAttributeList COCLASS IDENT '{' interfaceList '}'
+{
+	$$ = &go_midl.CoClassNode{
+		Attributes: $1,
+		Interfaces: $5,
+	}
+}
+
+interfaceList:
+	optionalAttributeList INTERFACE IDENT ';'
+	{
+		$$ = []*go_midl.InterfaceNode{{
+			Name: $3,
+		}}
+	}
+	| interfaceList optionalAttributeList INTERFACE IDENT ';'
+	{
+		$$ = append($1, &go_midl.InterfaceNode{
+			Name: $4,
+		})
+	}
 //// module
 
 module: optionalAttributeList MODULE IDENT '{' moduleEntryList '}' ';'
@@ -193,15 +226,17 @@ midlPragma: MIDL_PRAGMA IDENT '(' IDENT ':' NUM ')'
 
 //// struct
 
-struct: TYPEDEF STRUCT IDENT '{' structEntryList '}' IDENT ';'
+
+struct: optionalAttributeList TYPEDEF STRUCT IDENT '{' structEntryList '}' IDENT ';'
 {
 	$$ = &go_midl.StructNode{
-		Name: $7,
-		Fields: $5,
+		Name: $8,
+		Fields: $6,
 	}
 }
 
 structEntryList: /* empty */
+
 	{
 		$$ = []*go_midl.StructFieldNode{}
 	}
@@ -222,6 +257,7 @@ structEntry: optionalParamAttrs paramType optionalPointer IDENT ';'
 			Attributes: $1,
 		}
 	}
+
 //// enum
 
 enum: ENUM IDENT '{' enumEntryList '}' ';'
@@ -238,7 +274,6 @@ enum: ENUM IDENT '{' enumEntryList '}' ';'
 			Values: $6,
 		}
 	}
-
 
 enumEntryList: /* empty */
 		{
@@ -260,10 +295,9 @@ enumEntryList: /* empty */
 				$$ = $1
 			}
 		}
+	| enumEntryList ','
 
-enumEntry: /* empty */
-	{ $$ = nil }
-	| IDENT '=' enumVal
+enumEntry: IDENT '=' enumVal
 	{
 		$$ = &go_midl.EnumValueNode{
 			Name: $1,
@@ -362,7 +396,7 @@ attribute: /* empty */
 		{ $$ = &go_midl.AttributeNode{Type: go_midl.OBJECT} }
 	| UUID '(' IDENT ')'
 		{ $$ = &go_midl.AttributeNode{Type: go_midl.UUID, Val: $3} }
-	| POINTER_DEFAULT '(' IDENT ')'
+	| POINTER_DEFAULT '(' pointerType ')'
 		{ $$ = &go_midl.AttributeNode{Type: go_midl.POINTER_DEFAULT, Val: $3} }
 	| OLEAUTOMATION
 		{ $$ = &go_midl.AttributeNode{Type: go_midl.OLEAUTOMATION} }
@@ -374,6 +408,17 @@ attribute: /* empty */
 		{ $$ = &go_midl.AttributeNode{Type: go_midl.DLLNAME, Val: $3} }
 	| V1_ENUM
 		{ $$ = &go_midl.AttributeNode{Type: go_midl.V1_ENUM} }
+	| LOCAL
+		{ $$ = &go_midl.AttributeNode{Type: go_midl.LOCAL} }
+	| HELPSTRING '(' STRING ')'
+		{ $$ = &go_midl.AttributeNode{Type: go_midl.HELPSTRING, Val: $3} }
+	| DEFAULT
+		{ $$ = &go_midl.AttributeNode{Type: go_midl.DEFAULT} }
+
+pointerType: UNIQUE
+	{ $$ = $1 }
+	| IDENT
+	{ $$ = $1 }
 
 //// interface methods
 methodBlock: /* empty */
@@ -445,25 +490,28 @@ optionalParamAttrs: /* empty */
 	| '[' paramAttrList ']'
 	{ $$ = $2 }
 
-param: '[' paramAttrList ']' paramType optionalPointer IDENT array
+param: optionalParamAttrs const paramType const optionalPointer IDENT array
 	{
 		$$ = &go_midl.ParamNode{
-			Attributes: $2,
-			Type: $4,
+			Attributes: $1,
+			Type: $3,
 			Indirections: $5,
 			Name: $6,
 			Array: $7,
 		}
 	}
 
-paramType: ENUM IDENT
-	{ $$ = "enum " + $2 }
-	| LONG
+paramType: LONG
 	{ $$ = $1 }
 	| IDENT
 	{ $$ = $1 }
 	| IDENT '(' IDENT ')'
 	{ $$ = $1 + "(" + $3 + ")" }
+	| ENUM IDENT
+	{ $$ = "enum" + $2 }
+
+const: /* empty */
+	| CONST
 
 array: /* empty */
 	{ $$ = false }
@@ -485,6 +533,14 @@ paramAttr: IN
 		{ $$ = &go_midl.ParamAttrNode{Type: go_midl.RETVAL} }
 	| SIZE_IS '(' sizeParams ')'
 		{ $$ = &go_midl.ParamAttrNode{Type: go_midl.SIZE_IS, Val: $3} }
+	| ANNOTATION '(' STRING ')'
+		{ $$ = &go_midl.ParamAttrNode{Type: go_midl.ANNOTATION, Val: $3} }
+	| ATTR_STRING
+		{ $$ = &go_midl.ParamAttrNode{Type: go_midl.STRING} }
+	| UNIQUE
+		{ $$ = &go_midl.ParamAttrNode{Type: go_midl.UNIQUE} }
+	| IID_IS '(' IDENT ')'
+		{ $$ = &go_midl.ParamAttrNode{Type: go_midl.IDENT, Val: $3} }
 
 sizeParams: sizeParam
 	{ $$ = $1 }
@@ -506,3 +562,6 @@ optionalPointer: /* empty */
 		{ $$ = 2 }
 	| '*' '*' '*'
 		{ $$ = 3 }
+
+optionalSemicolon: /* empty */
+	| ';'

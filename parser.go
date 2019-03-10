@@ -57,7 +57,7 @@ type MethodNode struct {
 }
 
 type EnumNode struct {
-	Name string
+	Name   string
 	Values []*EnumValueNode
 }
 
@@ -94,14 +94,20 @@ type ModuleNode struct {
 }
 
 type StructNode struct {
-	Name string
+	Name   string
 	Fields []*StructFieldNode
 }
 
 type StructFieldNode struct {
-	Type string
-	Name string
+	Type       string
+	Name       string
 	Attributes []*ParamAttrNode
+}
+
+type CoClassNode struct {
+	Name string
+	Attributes []*AttributeNode
+	Interfaces []*InterfaceNode
 }
 
 func (p *Parser) Parse(ts []Token) error {

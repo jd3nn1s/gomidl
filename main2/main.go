@@ -86,6 +86,10 @@ func (f *mlex) Lex(lval *yySymType) int {
 		return PROPGET
 	case t.Type == go_midl.PROPPUT:
 		return PROPPUT
+	case t.Type == go_midl.ANNOTATION:
+		return ANNOTATION
+	case t.Type == go_midl.LOCAL:
+		return LOCAL
 	case t.Type == go_midl.CPP_QUOTE:
 		return CPP_QUOTE
 	case t.Type == go_midl.ENUM:
@@ -110,6 +114,18 @@ func (f *mlex) Lex(lval *yySymType) int {
 		return RETVAL
 	case t.Type == go_midl.SIZE_IS:
 		return SIZE_IS
+	case t.Type == go_midl.UNIQUE:
+		return UNIQUE
+	case t.Type == go_midl.ATTR_STRING:
+		return ATTR_STRING
+	case t.Type == go_midl.IID_IS:
+		return IID_IS
+	case t.Type == go_midl.HELPSTRING:
+		return HELPSTRING
+	case t.Type == go_midl.DEFAULT:
+		return DEFAULT
+	case t.Type == go_midl.COCLASS:
+		return COCLASS
 	case t.Type == go_midl.LONG:
 		return LONG
 	case t.Type == go_midl.NUM:
