@@ -1,4 +1,4 @@
-package go_midl
+package scanner
 
 import (
 	"errors"

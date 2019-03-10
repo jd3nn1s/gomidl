@@ -1,33 +1,34 @@
 %{
-package main
+package parser
 import (
-	"go-midl"
+	"github.com/jd3nn1s/gomidl/ast"
+	"github.com/jd3nn1s/gomidl/scanner"
 )
 %}
 
 %union {
-importNode *go_midl.ImportNode
-interfaceNode *go_midl.InterfaceNode
-interfaceNodeList []*go_midl.InterfaceNode
-attributeNode *go_midl.AttributeNode
-attributeNodeList []*go_midl.AttributeNode
-paramAttrNode *go_midl.ParamAttrNode
-paramAttrNodeList []*go_midl.ParamAttrNode
-paramNode *go_midl.ParamNode
-paramNodeList []*go_midl.ParamNode
-methodNode *go_midl.MethodNode
-methodNodeList []*go_midl.MethodNode
-enumNode *go_midl.EnumNode
-enumValueNode *go_midl.EnumValueNode
-enumValueNodeList []*go_midl.EnumValueNode
-typedefNode *go_midl.TypedefNode
-libraryNode *go_midl.LibraryNode
-importLibNode *go_midl.ImportLibNode
-moduleConstantNode *go_midl.ModuleConstantNode
-structNode *go_midl.StructNode
-structFieldNode *go_midl.StructFieldNode
-structFieldNodeList []*go_midl.StructFieldNode
-coClassNode *go_midl.CoClassNode
+importNode *ast.ImportNode
+interfaceNode *ast.InterfaceNode
+interfaceNodeList []*ast.InterfaceNode
+attributeNode *ast.AttributeNode
+attributeNodeList []*ast.AttributeNode
+paramAttrNode *ast.ParamAttrNode
+paramAttrNodeList []*ast.ParamAttrNode
+paramNode *ast.ParamNode
+paramNodeList []*ast.ParamNode
+methodNode *ast.MethodNode
+methodNodeList []*ast.MethodNode
+enumNode *ast.EnumNode
+enumValueNode *ast.EnumValueNode
+enumValueNodeList []*ast.EnumValueNode
+typedefNode *ast.TypedefNode
+libraryNode *ast.LibraryNode
+importLibNode *ast.ImportLibNode
+moduleConstantNode *ast.ModuleConstantNode
+structNode *ast.StructNode
+structFieldNode *ast.StructFieldNode
+structFieldNodeList []*ast.StructFieldNode
+coClassNode *ast.CoClassNode
 
 int int
 str string
@@ -143,7 +144,7 @@ cppQuote: CPP_QUOTE '(' STRING ')'
 
 library: optionalAttributeList LIBRARY IDENT '{' libraryEntryList '}' optionalSemicolon
 	{
-		$$ = &go_midl.LibraryNode{
+		$$ = &ast.LibraryNode{
 			Name: $3,
 			Attributes: $1,
 			Nodes: $5,
@@ -169,13 +170,13 @@ libraryEntry: interface
 	{ $$ = $1 }
 	| IMPORTLIB '(' STRING ')' ';'
 	{
-		$$ = &go_midl.ImportLibNode{
+		$$ = &ast.ImportLibNode{
 			Filename: $3,
 		}
 	}
 	| module
 	{
-		$$ = &go_midl.ModuleNode{
+		$$ = &ast.ModuleNode{
 		}
 	}
 	| coclass
@@ -185,7 +186,7 @@ libraryEntry: interface
 
 coclass: optionalAttributeList COCLASS IDENT '{' interfaceList '}'
 {
-	$$ = &go_midl.CoClassNode{
+	$$ = &ast.CoClassNode{
 		Attributes: $1,
 		Interfaces: $5,
 	}
@@ -194,13 +195,13 @@ coclass: optionalAttributeList COCLASS IDENT '{' interfaceList '}'
 interfaceList:
 	optionalAttributeList INTERFACE IDENT ';'
 	{
-		$$ = []*go_midl.InterfaceNode{{
+		$$ = []*ast.InterfaceNode{{
 			Name: $3,
 		}}
 	}
 	| interfaceList optionalAttributeList INTERFACE IDENT ';'
 	{
-		$$ = append($1, &go_midl.InterfaceNode{
+		$$ = append($1, &ast.InterfaceNode{
 			Name: $4,
 		})
 	}
@@ -214,7 +215,7 @@ moduleEntryList: moduleEntry
 
 moduleEntry: CONST LONG IDENT '=' NUM ';'
 	{
-		$$ = &go_midl.ModuleConstantNode{
+		$$ = &ast.ModuleConstantNode{
 			Name: $3,
 			Val: $5,
 		}
@@ -229,7 +230,7 @@ midlPragma: MIDL_PRAGMA IDENT '(' IDENT ':' NUM ')'
 
 struct: optionalAttributeList TYPEDEF STRUCT IDENT '{' structEntryList '}' IDENT ';'
 {
-	$$ = &go_midl.StructNode{
+	$$ = &ast.StructNode{
 		Name: $8,
 		Fields: $6,
 	}
@@ -238,11 +239,11 @@ struct: optionalAttributeList TYPEDEF STRUCT IDENT '{' structEntryList '}' IDENT
 structEntryList: /* empty */
 
 	{
-		$$ = []*go_midl.StructFieldNode{}
+		$$ = []*ast.StructFieldNode{}
 	}
 	| structEntry
 	{
-		$$ = []*go_midl.StructFieldNode{$1}
+		$$ = []*ast.StructFieldNode{$1}
 	}
 	| structEntryList structEntry
 	{
@@ -251,7 +252,7 @@ structEntryList: /* empty */
 
 structEntry: optionalParamAttrs paramType optionalPointer IDENT ';'
 	{
-		$$ = &go_midl.StructFieldNode{
+		$$ = &ast.StructFieldNode{
 			Type: $2,
 			Name: $4,
 			Attributes: $1,
@@ -262,14 +263,14 @@ structEntry: optionalParamAttrs paramType optionalPointer IDENT ';'
 
 enum: ENUM IDENT '{' enumEntryList '}' ';'
 	{
-		$$ = &go_midl.EnumNode{
+		$$ = &ast.EnumNode{
 			Name: $2,
 			Values: $4,
 		}
 	}
 	| optionalAttributeList TYPEDEF ENUM IDENT '{' enumEntryList '}' IDENT ';'
 	{
-		$$ = &go_midl.EnumNode{
+		$$ = &ast.EnumNode{
 			Name: $8,
 			Values: $6,
 		}
@@ -277,14 +278,14 @@ enum: ENUM IDENT '{' enumEntryList '}' ';'
 
 enumEntryList: /* empty */
 		{
-			$$ = []*go_midl.EnumValueNode{}
+			$$ = []*ast.EnumValueNode{}
 		}
 	| enumEntry
 		{
 			if $1 != nil {
-				$$ = []*go_midl.EnumValueNode{$1}
+				$$ = []*ast.EnumValueNode{$1}
 			} else {
-				$$ = []*go_midl.EnumValueNode{}
+				$$ = []*ast.EnumValueNode{}
 			}
 		}
 	| enumEntryList ',' enumEntry
@@ -299,14 +300,14 @@ enumEntryList: /* empty */
 
 enumEntry: IDENT '=' enumVal
 	{
-		$$ = &go_midl.EnumValueNode{
+		$$ = &ast.EnumValueNode{
 			Name: $1,
 			Val: $3,
 		}
 	}
 	| IDENT
 	{
-		$$ = &go_midl.EnumValueNode{
+		$$ = &ast.EnumValueNode{
 			Name: $1,
 		}
 	}
@@ -323,7 +324,7 @@ enumVal: IDENT
 //// imports
 
 importFiles: IMPORT stringListLoop ';'
-	{ $$ = &go_midl.ImportNode{Files: $2} }
+	{ $$ = &ast.ImportNode{Files: $2} }
 
 stringListLoop: STRING
 		{ $$ = []string{$1} }
@@ -334,7 +335,7 @@ stringListLoop: STRING
 
 typedef: optionalAttributeList TYPEDEF paramType optionalPointer IDENT ';'
 	{
-		$$ = &go_midl.TypedefNode{
+		$$ = &ast.TypedefNode{
 			Type: $3,
 			Indirection: $4,
 			Name: $5,
@@ -351,7 +352,7 @@ parentInterface: /* empty */
 
 interface: optionalAttributeList INTERFACE IDENT parentInterface methodBlock ';'
 	{
-		$$ = &go_midl.InterfaceNode{
+		$$ = &ast.InterfaceNode{
 			Name: $3,
 			ParentName: $4,
 			Attributes: $1,
@@ -360,7 +361,7 @@ interface: optionalAttributeList INTERFACE IDENT parentInterface methodBlock ';'
 	}
 	| optionalAttributeList INTERFACE IDENT parentInterface methodBlock
 	{
-		$$ = &go_midl.InterfaceNode{
+		$$ = &ast.InterfaceNode{
 			Name: $3,
 			ParentName: $4,
 			Attributes: $1,
@@ -371,16 +372,16 @@ interface: optionalAttributeList INTERFACE IDENT parentInterface methodBlock ';'
 //// interface attributes
 
 optionalAttributeList: /* empty */
-		{ $$ = []*go_midl.AttributeNode{} }
+		{ $$ = []*ast.AttributeNode{} }
 	| '[' attributeList ']'
 		{ $$ = $2 }
 
 attributeList: attribute
 		{
 			if $1 != nil {
-				$$ = []*go_midl.AttributeNode{$1}
+				$$ = []*ast.AttributeNode{$1}
 			} else {
-				$$ = []*go_midl.AttributeNode{}
+				$$ = []*ast.AttributeNode{}
 			}
 		}
 	| attributeList ',' attribute
@@ -393,27 +394,27 @@ attributeList: attribute
 attribute: /* empty */
 		{ $$ = nil }
 	| OBJECT
-		{ $$ = &go_midl.AttributeNode{Type: go_midl.OBJECT} }
+		{ $$ = &ast.AttributeNode{Type: scanner.OBJECT} }
 	| UUID '(' IDENT ')'
-		{ $$ = &go_midl.AttributeNode{Type: go_midl.UUID, Val: $3} }
+		{ $$ = &ast.AttributeNode{Type: scanner.UUID, Val: $3} }
 	| POINTER_DEFAULT '(' pointerType ')'
-		{ $$ = &go_midl.AttributeNode{Type: go_midl.POINTER_DEFAULT, Val: $3} }
+		{ $$ = &ast.AttributeNode{Type: scanner.POINTER_DEFAULT, Val: $3} }
 	| OLEAUTOMATION
-		{ $$ = &go_midl.AttributeNode{Type: go_midl.OLEAUTOMATION} }
+		{ $$ = &ast.AttributeNode{Type: scanner.OLEAUTOMATION} }
 	| LCID '(' NUM ')'
-		{ $$ = &go_midl.AttributeNode{Type: go_midl.LCID, Val: $3} }
+		{ $$ = &ast.AttributeNode{Type: scanner.LCID, Val: $3} }
 	| VERSION '(' IDENT ')'
-		{ $$ = &go_midl.AttributeNode{Type: go_midl.VERSION, Val: $3} }
+		{ $$ = &ast.AttributeNode{Type: scanner.VERSION, Val: $3} }
 	| DLLNAME '(' STRING ')'
-		{ $$ = &go_midl.AttributeNode{Type: go_midl.DLLNAME, Val: $3} }
+		{ $$ = &ast.AttributeNode{Type: scanner.DLLNAME, Val: $3} }
 	| V1_ENUM
-		{ $$ = &go_midl.AttributeNode{Type: go_midl.V1_ENUM} }
+		{ $$ = &ast.AttributeNode{Type: scanner.V1_ENUM} }
 	| LOCAL
-		{ $$ = &go_midl.AttributeNode{Type: go_midl.LOCAL} }
+		{ $$ = &ast.AttributeNode{Type: scanner.LOCAL} }
 	| HELPSTRING '(' STRING ')'
-		{ $$ = &go_midl.AttributeNode{Type: go_midl.HELPSTRING, Val: $3} }
+		{ $$ = &ast.AttributeNode{Type: scanner.HELPSTRING, Val: $3} }
 	| DEFAULT
-		{ $$ = &go_midl.AttributeNode{Type: go_midl.DEFAULT} }
+		{ $$ = &ast.AttributeNode{Type: scanner.DEFAULT} }
 
 pointerType: UNIQUE
 	{ $$ = $1 }
@@ -422,20 +423,20 @@ pointerType: UNIQUE
 
 //// interface methods
 methodBlock: /* empty */
-		{ $$ = []*go_midl.MethodNode{} }
+		{ $$ = []*ast.MethodNode{} }
 	| '{' '}'
-		{ $$ = []*go_midl.MethodNode{} }
+		{ $$ = []*ast.MethodNode{} }
 	| '{' methodList '}'
 		{ $$ = $2 }
 
 methodList: method ';'
-	{ $$ = []*go_midl.MethodNode{$1} }
+	{ $$ = []*ast.MethodNode{$1} }
 	| methodList method ';'
 	{ $$ = append($1, $2) }
 
 method: optionalMethodAttrs IDENT IDENT '(' paramList ')'
 	{
-		$$ = &go_midl.MethodNode{
+		$$ = &ast.MethodNode{
 			ReturnType: $2,
 			Name: $3,
 			Params: $5,
@@ -443,16 +444,16 @@ method: optionalMethodAttrs IDENT IDENT '(' paramList ')'
 	}
 
 optionalMethodAttrs: /* empty */
-		{ $$ = []*go_midl.AttributeNode{} }
+		{ $$ = []*ast.AttributeNode{} }
 	| '[' methodAttrList ']'
 		{ $$ = $2 }
 
 methodAttrList: methodAttr
 		{
 			if $1 != nil {
-				$$ = []*go_midl.AttributeNode{$1}
+				$$ = []*ast.AttributeNode{$1}
 			} else {
-				$$ = []*go_midl.AttributeNode{}
+				$$ = []*ast.AttributeNode{}
 			}
 		}
 	| methodAttrList ',' methodAttr
@@ -465,9 +466,9 @@ methodAttrList: methodAttr
 methodAttr: /* empty */
 		{ $$ = nil }
 	| PROPGET
-		{ $$ = &go_midl.AttributeNode{Type: go_midl.PROPGET} }
+		{ $$ = &ast.AttributeNode{Type: scanner.PROPGET} }
 	| PROPPUT
-		{ $$ = &go_midl.AttributeNode{Type: go_midl.PROPPUT} }
+		{ $$ = &ast.AttributeNode{Type: scanner.PROPPUT} }
 
 
 //// method parameters
@@ -478,7 +479,7 @@ paramList: /* empty */
 	}
 	|param
 	{
-		$$ = []*go_midl.ParamNode{$1}
+		$$ = []*ast.ParamNode{$1}
 	}
 	| paramList ',' param
 	{
@@ -492,7 +493,7 @@ optionalParamAttrs: /* empty */
 
 param: optionalParamAttrs const paramType const optionalPointer IDENT array
 	{
-		$$ = &go_midl.ParamNode{
+		$$ = &ast.ParamNode{
 			Attributes: $1,
 			Type: $3,
 			Indirections: $5,
@@ -519,28 +520,28 @@ array: /* empty */
 	{ $$ = true }
 
 paramAttrList: paramAttr
-		{ $$ = []*go_midl.ParamAttrNode{$1} }
+		{ $$ = []*ast.ParamAttrNode{$1} }
 	| paramAttrList ',' paramAttr
 		{ $$ = append($1, $3) }
 
 paramAttr: IN
-		{ $$ = &go_midl.ParamAttrNode{Type: go_midl.IN} }
+		{ $$ = &ast.ParamAttrNode{Type: scanner.IN} }
 	| OUT
-		{ $$ = &go_midl.ParamAttrNode{Type: go_midl.OUT} }
+		{ $$ = &ast.ParamAttrNode{Type: scanner.OUT} }
 	| MAX_IS '(' IDENT ')'
-		{ $$ = &go_midl.ParamAttrNode{Type: go_midl.MAX_IS, Val:$3} }
+		{ $$ = &ast.ParamAttrNode{Type: scanner.MAX_IS, Val:$3} }
 	| RETVAL
-		{ $$ = &go_midl.ParamAttrNode{Type: go_midl.RETVAL} }
+		{ $$ = &ast.ParamAttrNode{Type: scanner.RETVAL} }
 	| SIZE_IS '(' sizeParams ')'
-		{ $$ = &go_midl.ParamAttrNode{Type: go_midl.SIZE_IS, Val: $3} }
+		{ $$ = &ast.ParamAttrNode{Type: scanner.SIZE_IS, Val: $3} }
 	| ANNOTATION '(' STRING ')'
-		{ $$ = &go_midl.ParamAttrNode{Type: go_midl.ANNOTATION, Val: $3} }
+		{ $$ = &ast.ParamAttrNode{Type: scanner.ANNOTATION, Val: $3} }
 	| ATTR_STRING
-		{ $$ = &go_midl.ParamAttrNode{Type: go_midl.STRING} }
+		{ $$ = &ast.ParamAttrNode{Type: scanner.STRING} }
 	| UNIQUE
-		{ $$ = &go_midl.ParamAttrNode{Type: go_midl.UNIQUE} }
+		{ $$ = &ast.ParamAttrNode{Type: scanner.UNIQUE} }
 	| IID_IS '(' IDENT ')'
-		{ $$ = &go_midl.ParamAttrNode{Type: go_midl.IDENT, Val: $3} }
+		{ $$ = &ast.ParamAttrNode{Type: scanner.IDENT, Val: $3} }
 
 sizeParams: sizeParam
 	{ $$ = $1 }

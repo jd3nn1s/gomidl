@@ -1,4 +1,4 @@
-package go_midl
+package scanner
 
 import (
 	"fmt"
@@ -19,20 +19,20 @@ const (
 	literal_end
 
 	operators_beg
-	LPAREN  // (
-	RPAREN  // )
-	LBRACK  // [
-	RBRACK  // ]
-	LBRACE  // {
-	RBRACE  // }
+	LPAREN // (
+	RPAREN // )
+	LBRACK // [
+	RBRACK // ]
+	LBRACE // {
+	RBRACE // }
 
-	COMMA      // ,
-	COLON      // :
-	SEMICOLON  // ;
-	DASH       // -
-	PTR        // *
-	EQUALS     // =
-	B_OR       // |
+	COMMA     // ,
+	COLON     // :
+	SEMICOLON // ;
+	DASH      // -
+	PTR       // *
+	EQUALS    // =
+	B_OR      // |
 	operators_end
 
 	keyword_beg
@@ -116,8 +116,8 @@ var tokenEnumMap = map[TokenType]string{
 	ATTR_STRING:     "string",
 	COCLASS:         "coclass",
 	IID_IS:          "iid_is",
-	HELPSTRING:		 "helpstring",
-	DEFAULT:		 "default",
+	HELPSTRING:      "helpstring",
+	DEFAULT:         "default",
 
 	IN:     "in",
 	OUT:    "out",
