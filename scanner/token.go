@@ -29,8 +29,10 @@ const (
 	COMMA     // ,
 	COLON     // :
 	SEMICOLON // ;
+	PLUS      // +
 	DASH      // -
 	PTR       // *
+	DIV       // /
 	EQUALS    // =
 	B_OR      // |
 	operators_end
@@ -61,12 +63,14 @@ const (
 	DLLNAME
 	PROPGET
 	PROPPUT
+	ENTRY
 	RETVAL
 	SIZE_IS
 	OLEAUTOMATION
 	LOCAL
 	ATTR_STRING
 	DEFAULT
+	NONCREATABLE
 
 	V1_ENUM
 	attr_end
@@ -104,6 +108,7 @@ var tokenEnumMap = map[TokenType]string{
 	IMPORTLIB:       "importlib",
 	PROPGET:         "propget",
 	PROPPUT:         "propput",
+	ENTRY:           "entry",
 	OLEAUTOMATION:   "oleautomation",
 	SIZE_IS:         "size_is",
 	RETVAL:          "retval",
@@ -118,6 +123,7 @@ var tokenEnumMap = map[TokenType]string{
 	IID_IS:          "iid_is",
 	HELPSTRING:      "helpstring",
 	DEFAULT:         "default",
+	NONCREATABLE:    "noncreatable",
 
 	IN:     "in",
 	OUT:    "out",

@@ -4,9 +4,10 @@ package parser
 
 import (
 	"fmt"
-	"github.com/jd3nn1s/gomidl/scanner"
 	"io"
 	"log"
+
+	"github.com/jd3nn1s/gomidl/scanner"
 )
 
 var scannerToParserMap = map[scanner.TokenType]int{
@@ -22,7 +23,10 @@ var scannerToParserMap = map[scanner.TokenType]int{
 	scanner.RBRACE:    '}',
 	scanner.LBRACK:    '[',
 	scanner.RBRACK:    ']',
+	scanner.PLUS:      '+',
+	scanner.DASH:      '-',
 	scanner.PTR:       '*',
+	scanner.DIV:       '/',
 	scanner.EQUALS:    '=',
 	scanner.B_OR:      '|',
 
@@ -40,6 +44,7 @@ var scannerToParserMap = map[scanner.TokenType]int{
 	scanner.OUT:             OUT,
 	scanner.PROPGET:         PROPGET,
 	scanner.PROPPUT:         PROPPUT,
+	scanner.ENTRY:           ENTRY,
 	scanner.ANNOTATION:      ANNOTATION,
 	scanner.LOCAL:           LOCAL,
 	scanner.CPP_QUOTE:       CPP_QUOTE,
@@ -59,6 +64,7 @@ var scannerToParserMap = map[scanner.TokenType]int{
 	scanner.IID_IS:          IID_IS,
 	scanner.HELPSTRING:      HELPSTRING,
 	scanner.DEFAULT:         DEFAULT,
+	scanner.NONCREATABLE:    NONCREATABLE,
 	scanner.COCLASS:         COCLASS,
 	scanner.LONG:            LONG,
 	scanner.NUM:             NUM,

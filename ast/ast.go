@@ -24,6 +24,12 @@ type ParamNode struct {
 	Array        bool
 }
 
+type ReturnNode struct {
+	Type         string
+	Indirections int
+	Array        bool
+}
+
 type InterfaceNode struct {
 	Name       string
 	ParentName string
@@ -33,7 +39,7 @@ type InterfaceNode struct {
 
 type MethodNode struct {
 	Name       string
-	ReturnType string
+	ReturnType *ReturnNode
 	Params     []*ParamNode
 }
 
@@ -52,6 +58,12 @@ type TypedefNode struct {
 	Type        string
 	Indirection int
 	Attributes  []*AttributeNode
+}
+
+type ConstdefNode struct {
+	Name string
+	Type string
+	Val  interface{}
 }
 
 type LibraryNode struct {
@@ -76,13 +88,15 @@ type ModuleNode struct {
 
 type StructNode struct {
 	Name   string
+	Alias  []string
 	Fields []*StructFieldNode
 }
 
 type StructFieldNode struct {
-	Type       string
-	Name       string
-	Attributes []*ParamAttrNode
+	Type         string
+	Name         string
+	Indirections int
+	Attributes   []*ParamAttrNode
 }
 
 type CoClassNode struct {

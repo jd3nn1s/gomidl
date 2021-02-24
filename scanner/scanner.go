@@ -81,8 +81,14 @@ func (s *Scanner) Read() bool {
 			s.lastToken.Type = COMMA
 		case c == ';':
 			s.lastToken.Type = SEMICOLON
+		case c == '+':
+			s.lastToken.Type = PLUS
+		case c == '-':
+			s.lastToken.Type = DASH
 		case c == '*':
 			s.lastToken.Type = PTR
+		case c == '/':
+			s.lastToken.Type = DIV
 		case c == '=':
 			s.lastToken.Type = EQUALS
 		case c == '|':
@@ -116,18 +122,32 @@ func (s *Scanner) findKeyword() (TokenType, string) {
 
 	literal := false
 	number := false
-	if unicode.IsDigit(s.c) {
+	if unicode.IsDigit(s.c) || s.c == '-' {
 		number = true
 	}
 	for {
 		if !s.next() {
 			return EOF, ""
 		}
+
+		if token[0] == 'L' && s.c == '"' {
+			if v, ok := s.findString(); ok {
+				s.c = 0 // TODO less readable
+				return STRING, v
+			}
+		}
+
 		if number {
-			if !unicode.IsDigit(s.c) &&
-				!(len(token) == 1 &&
-					token[0] == '0' &&
-					(s.c == 'x' || s.c == 'X')) {
+
+			hex := false
+			if len(token) == 1 {
+				hex = token[0] == '0' && (s.c == 'x' || s.c == 'X')
+			} else {
+				hex = token[0] == '0' && (token[1] == 'x' || token[1] == 'X')
+				hex = hex && ('A' <= s.c && s.c <= 'F') || ('a' <= s.c && s.c <= 'f')
+			}
+
+			if !unicode.IsDigit(s.c) && !hex {
 				if literalChar(s.c) {
 					number = false
 				} else {
@@ -180,11 +200,20 @@ func (s *Scanner) skipLine() bool {
 }
 
 func (s *Scanner) skipComment() bool {
+	lastc := s.c
 	if s.c == '/' && s.next() && s.c == '/' {
 		for s.next() {
 			if s.c == '\n' {
 				return true
 			}
+		}
+	} else if s.c == '*' {
+		for s.next() {
+			if lastc == '*' && s.c == '/' {
+				s.next() // eat '/'
+				return true
+			}
+			lastc = s.c
 		}
 	}
 	return false
