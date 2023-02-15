@@ -18,20 +18,20 @@ type Generator struct {
 }
 
 var typeMap = map[string]string{
-	"LONG":     "int32",
-	"DWORD":    "uint32",
-	"ULONG":    "uint32",
-	"BYTE":     "byte",
-	"LPWSTR":   "string",
-	"LPCWSTR":  "string",
-	"GUID":     "ole.GUID",
-	"UINT_PTR": "*int32",
-	"BOOL":     "bool",
-	"REFGUID": "*ole.GUID",
-	"HWND": "wintypes.HWND",
-	"HBITMAP": "wintypes.HBITMAP",
+	"LONG":           "int32",
+	"DWORD":          "uint32",
+	"ULONG":          "uint32",
+	"BYTE":           "byte",
+	"LPWSTR":         "string",
+	"LPCWSTR":        "string",
+	"GUID":           "ole.GUID",
+	"UINT_PTR":       "*int32",
+	"BOOL":           "bool",
+	"REFGUID":        "*ole.GUID",
+	"HWND":           "wintypes.HWND",
+	"HBITMAP":        "wintypes.HBITMAP",
 	"REFPROPERTYKEY": "wintypes.PROPERTYKEY",
-	"PROPVARIANT": "uintptr",
+	"PROPVARIANT":    "uintptr",
 }
 
 var olePackageStruct = map[string]struct{}{
@@ -169,7 +169,7 @@ func (g *Generator) genInterface(n *ast.InterfaceNode) {
 			g.Printf("%s\n", convertCode)
 		}
 		numSyscallParams := len(m.Params) + 1
-		numSyscallRequired := int(math.Ceil(float64(numSyscallParams) / 3)) * 3
+		numSyscallRequired := int(math.Ceil(float64(numSyscallParams)/3)) * 3
 
 		syscallFunc := "Syscall"
 		if numSyscallRequired > 18 {
@@ -246,14 +246,14 @@ func (g *Generator) genParam(n *ast.ParamNode) (string, string) {
 func (g *Generator) genSyscallParams(param *ast.ParamNode) ([]string, string) {
 	goType := g.mapType(param.Type)
 	indirections := param.Indirections + strings.Count(goType, "*")
-	if goType == "VARIANT" && indirections == 0{
+	if goType == "VARIANT" && indirections == 0 {
 		prefix := param.Name
-		return []string{prefix+"V0", prefix+"V1", prefix+"V2"},
-		""
+		return []string{prefix + "V0", prefix + "V1", prefix + "V2"},
+			""
 	} else if goType == "bool" && indirections == 0 {
 		return []string{fmt.Sprintf("uintptr(%s_bool)", param.Name)},
-			fmt.Sprintf("var %s_bool int\n" +
-				"if %s == true { %s_bool = 1 }", param.Name,param.Name,param.Name)
+			fmt.Sprintf("var %s_bool int\n"+
+				"if %s == true { %s_bool = 1 }", param.Name, param.Name, param.Name)
 	} else if indirections > 0 {
 		return []string{fmt.Sprintf("uintptr(unsafe.Pointer(%s))", param.Name)}, ""
 	} else if goType == "string" {

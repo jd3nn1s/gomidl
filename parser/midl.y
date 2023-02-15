@@ -18,10 +18,12 @@ paramNode *ast.ParamNode
 paramNodeList []*ast.ParamNode
 methodNode *ast.MethodNode
 methodNodeList []*ast.MethodNode
+returnType *ast.ReturnNode
 enumNode *ast.EnumNode
 enumValueNode *ast.EnumValueNode
 enumValueNodeList []*ast.EnumValueNode
 typedefNode *ast.TypedefNode
+constdefNode *ast.ConstdefNode
 libraryNode *ast.LibraryNode
 importLibNode *ast.ImportLibNode
 moduleConstantNode *ast.ModuleConstantNode
@@ -41,7 +43,7 @@ intf interface{}
 
 %token INTERFACE IDENT IMPORT STRING CPP_QUOTE MIDL_PRAGMA NUM ENUM TYPEDEF LIBRARY IMPORTLIB MODULE STRUCT COCLASS DEFAULT
 // interface attributes
-%token POINTER_DEFAULT OBJECT UUID OLEAUTOMATION LOCAL HELPSTRING
+%token POINTER_DEFAULT OBJECT UUID OLEAUTOMATION LOCAL HELPSTRING NONCREATABLE
 // library attributes
 %token LCID VERSION
 // variables
@@ -49,7 +51,7 @@ intf interface{}
 // module attributes
 %token DLLNAME
 // method attributes
-%token PROPGET PROPPUT
+%token PROPGET PROPPUT ENTRY
 // parameter attributes
 %token IN OUT MAX_IS RETVAL SIZE_IS ANNOTATION ATTR_STRING UNIQUE IID_IS
 // typedef attributes
@@ -64,6 +66,7 @@ intf interface{}
 
 %type <methodNode> method
 %type <methodNodeList> methodList methodBlock
+%type <returnType> returnType
 
 %type <paramNode> param
 %type <paramNodeList> paramList
@@ -76,9 +79,11 @@ intf interface{}
 %type <enumValueNode> enumEntry
 
 %type <typedefNode> typedef
+%type <constdefNode> constdef
 
 %type <libraryNode> library
 
+%type <lstr> alias
 %type <structNode> struct
 %type <structFieldNode> structEntry
 %type <structFieldNodeList> structEntryList
@@ -181,6 +186,14 @@ libraryEntry: interface
 	}
 	| coclass
 	{ $$ = $1 }
+	| typedef
+	{ $$ = $1 }
+	| constdef
+	{ $$ = $1 }
+	| enum
+	{ $$ = $1 }
+	| struct
+	{ $$ = $1 }
 
 //// coclass
 
@@ -212,7 +225,9 @@ module: optionalAttributeList MODULE IDENT '{' moduleEntryList '}' ';'
 	| optionalAttributeList MODULE IDENT '{' moduleEntryList '}'
 
 moduleEntryList: moduleEntry
+	| method ';'
 	| moduleEntryList moduleEntry
+	| moduleEntryList method ';'
 
 moduleEntry: CONST LONG IDENT '=' NUM ';'
 	{
@@ -228,11 +243,16 @@ midlPragma: MIDL_PRAGMA IDENT '(' IDENT ':' NUM ')'
 
 //// struct
 
+alias: /* empty */
+	{ $$ = nil }
+    | alias ',' const optionalPointer IDENT
+	{ $$ = append($1, $5)}
 
-struct: optionalAttributeList TYPEDEF STRUCT IDENT '{' structEntryList '}' IDENT ';'
+struct: optionalAttributeList TYPEDEF STRUCT IDENT '{' structEntryList '}' IDENT alias ';'
 {
 	$$ = &ast.StructNode{
 		Name: $8,
+		Alias: $9,
 		Fields: $6,
 	}
 }
@@ -251,11 +271,12 @@ structEntryList: /* empty */
 		$$ = append($1, $2)
 	}
 
-structEntry: optionalParamAttrs paramType optionalPointer IDENT ';'
+structEntry: optionalParamAttrs const paramType optionalPointer IDENT ';'
 	{
 		$$ = &ast.StructFieldNode{
-			Type: $2,
-			Name: $4,
+			Type: $3,
+			Name: $5,
+			Indirections: $4,
 			Attributes: $1,
 		}
 	}
@@ -321,6 +342,22 @@ enumVal: IDENT
 		{ $$ = $1 + "|" + $3 }
 	| enumVal '|' IDENT
 		{ $$ = $1 + "|" + $3 }
+	| enumVal '+' NUM
+		{ $$ = $1 + "+" + $3 }
+	| enumVal '+' IDENT
+		{ $$ = $1 + "+" + $3 }
+	| enumVal '-' NUM
+		{ $$ = $1 + "-" + $3 }
+	| enumVal '-' IDENT
+		{ $$ = $1 + "-" + $3 }
+	| enumVal '*' NUM
+		{ $$ = $1 + "*" + $3 }
+	| enumVal '*' IDENT
+		{ $$ = $1 + "*" + $3 }
+	| enumVal '/' NUM
+		{ $$ = $1 + "/" + $3 }
+	| enumVal '/' IDENT
+		{ $$ = $1 + "/" + $3 }
 
 //// imports
 
@@ -416,6 +453,8 @@ attribute: /* empty */
 		{ $$ = &ast.AttributeNode{Type: scanner.HELPSTRING, Val: $3} }
 	| DEFAULT
 		{ $$ = &ast.AttributeNode{Type: scanner.DEFAULT} }
+    | NONCREATABLE
+		{ $$ = &ast.AttributeNode{Type: scanner.NONCREATABLE} }
 
 pointerType: UNIQUE
 	{ $$ = $1 }
@@ -435,7 +474,7 @@ methodList: method ';'
 	| methodList method ';'
 	{ $$ = append($1, $2) }
 
-method: optionalMethodAttrs IDENT IDENT '(' paramList ')'
+method: optionalMethodAttrs returnType IDENT '(' paramList ')'
 	{
 		$$ = &ast.MethodNode{
 			ReturnType: $2,
@@ -470,6 +509,8 @@ methodAttr: /* empty */
 		{ $$ = &ast.AttributeNode{Type: scanner.PROPGET} }
 	| PROPPUT
 		{ $$ = &ast.AttributeNode{Type: scanner.PROPPUT} }
+    | ENTRY '(' STRING ')'
+		{ $$ = &ast.AttributeNode{Type: scanner.ENTRY, Val: $3} }
 
 
 //// method parameters
@@ -491,6 +532,8 @@ optionalParamAttrs: /* empty */
 	{ $$ = nil }
 	| '[' paramAttrList ']'
 	{ $$ = $2 }
+	| optionalParamAttrs '[' paramAttrList ']'
+	{ $$ = append($1, $3...) }
 
 param: optionalParamAttrs const paramType const optionalPointer IDENT array
 	{
@@ -502,6 +545,17 @@ param: optionalParamAttrs const paramType const optionalPointer IDENT array
 			Array: $7,
 		}
 	}
+	| optionalParamAttrs const paramType const optionalPointer // nameless
+	{
+		$$ = &ast.ParamNode{
+			Attributes: $1,
+			Type: $3,
+			Indirections: $5,
+			Name: "",
+			Array: false,
+		}
+	}
+
 
 paramType: LONG
 	{ $$ = $1 }
@@ -512,8 +566,35 @@ paramType: LONG
 	| ENUM IDENT
 	{ $$ = "enum" + $2 }
 
+returnType: const IDENT const optionalPointer array
+	{
+		$$ = &ast.ReturnNode{
+			Type: $2,
+			Indirections: $4,
+			Array: $5,
+		}
+	}
+
 const: /* empty */
 	| CONST
+
+constdef: CONST IDENT IDENT '=' STRING ';'
+	{
+		$$ = &ast.ConstdefNode{
+			Type: $2,
+			Name: $3,
+			Val: $5,
+		}
+	}
+	| CONST IDENT IDENT '=' NUM ';'
+	{
+		$$ = &ast.ConstdefNode{
+			Type: $2,
+			Name: $3,
+			Val: $5,
+		}
+	}
+
 
 array: /* empty */
 	{ $$ = false }
